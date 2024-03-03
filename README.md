@@ -1,1 +1,1 @@
-[![Java CI with Gradle](https://github.com/KindCoffeeBear/hwPageObject/actions/workflows/gradle.yml/badge.svg)](https://github.com/KindCoffeeBear/hwPageObject/actions/workflows/gradle.yml)
+[![Java CI with Gradle](https://github.com/KindCoffeeBear/hwBddCucumber/actions/workflows/gradle.yml/badge.svg)](https://github.com/KindCoffeeBear/hwBddCucumber/actions/workflows/gradle.yml)
