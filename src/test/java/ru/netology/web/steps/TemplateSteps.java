@@ -32,8 +32,8 @@ public class TemplateSteps {
     int secondCardBalance;
     int amount;
 
-    @Пусть("открыта страница с формой авторизации {string}")
-    public void openAuthPage(String url) {
+    @Пусть("пользователь залогинен с именем «vasya» и паролем «qwerty123»,")
+    public void openDashboardPage() {
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--start-maximized");
         Map<String, Object> prefs = new HashMap<String, Object>();
@@ -41,54 +41,28 @@ public class TemplateSteps {
         prefs.put("password_manager_enabled", false);
         options.setExperimentalOption("prefs", prefs);
         Configuration.browserCapabilities = options;
-        loginPage = Selenide.open(url, LoginPage.class);
-    }
-
-    @Когда("пользователь пытается авторизоваться")
-    public void loginWithNameAndPassword() {
+        loginPage = Selenide.open("http://localhost:9999", LoginPage.class);
         verificationPage = loginPage.validLogin(authInfo);
-    }
-
-    @И("пользователь вводит корректный проверочный код 'из смс'")
-    public void setVerifyCode() {
         dashboardPage = verificationPage.validVerify(verificationCode);
+
     }
 
-    @И("пользовать выбирает пополнить карту c id {string}")
-    public void selectCardForReplenishment(String id) {
+    @Когда("пользователь переводит {string} рублей с карты с номером 5559 0000 0000 0002 на свою 1 карту с главной страницы,")
+    public void makeReplenishment(String sum) {
         firstCardBalance = dashboardPage.getCardBalance(firstCardInfo.getId());
         secondCardBalance = dashboardPage.getCardBalance(secondCardInfo.getId());
-        replenishmentPage = dashboardPage.selectCardToReplenishment(id);
+        replenishmentPage = dashboardPage.selectCardToReplenishment(firstCardInfo.getId());
+        amount = Integer.parseInt(sum);
+        dashboardPage = replenishmentPage.makeValidReplenishment(String.valueOf(amount), secondCardInfo);
     }
 
-    @И("вводит сумму и номер карты '5559 0000 0000 0001'")
-    public void setAmountAndCardNumberOne() {
-        amount = DataHelper.generateValidAmount(firstCardBalance);
-        dashboardPage = replenishmentPage.makeValidReplenishment(String.valueOf(amount), firstCardInfo);
-    }
-
-    @И("вводит сумму больше, чем баланс и номер карты '5559 0000 0000 0002'")
-    public void setAmountAndCardNumberTwo() {
-        amount = DataHelper.generateInvalidAmount(secondCardBalance);
-        replenishmentPage.makeReplenishment(String.valueOf(amount), secondCardInfo);
-    }
-
-    @Тогда("происходит успешное пополнение, пользовать попадает на страницу 'Ваши карты' и баланс карт изменился")
-    public void verifyReplenishment() {
-        int expectedBalanceFirstCard = firstCardBalance - amount;
-        int expectedBalanceSecondCard = secondCardBalance + amount;
+    @Тогда("баланс его 1 карты из списка на главной странице должен стать {string} рублей")
+    public void verifyReplenishment(String total) {
+        int expectedBalanceFirstCard = Integer.parseInt(total);
+        int expectedBalanceSecondCard = secondCardBalance - amount;
         var actualBalanceFirstCard = dashboardPage.getCardBalance(firstCardInfo.getId());
         var actualBalanceSecondCard = dashboardPage.getCardBalance(secondCardInfo.getId());
         assertAll(()->assertEquals(expectedBalanceFirstCard, actualBalanceFirstCard),
                 ()->assertEquals(expectedBalanceSecondCard, actualBalanceSecondCard));
-    }
-
-    @Тогда("появляется сообщение об ошибке, баланс карт не меняется")
-    public void appearErrorMessage() {
-        replenishmentPage.findErrorMessage("Ошибка! На балансе недостаточно средств");
-        var actualBalanceFirstCard = dashboardPage.getCardBalance(firstCardInfo.getId());
-        var actualBalanceSecondCard = dashboardPage.getCardBalance(secondCardInfo.getId());
-        assertAll(()->assertEquals(firstCardBalance, actualBalanceFirstCard),
-                ()->assertEquals(secondCardBalance, actualBalanceSecondCard));
     }
 }
