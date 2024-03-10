@@ -47,21 +47,35 @@ public class TemplateSteps {
 
     }
 
-    @Когда("пользователь переводит {string} рублей с карты с номером 5559 0000 0000 0002 на свою 1 карту с главной страницы,")
-    public void makeReplenishment(String sum) {
+    @Когда("пользователь переводит {string} рублей с карты с номером {string} на свою другую карту с главной страницы,")
+    public void makeReplenishment(String sum, String card) {
         firstCardBalance = dashboardPage.getCardBalance(firstCardInfo.getId());
         secondCardBalance = dashboardPage.getCardBalance(secondCardInfo.getId());
-        replenishmentPage = dashboardPage.selectCardToReplenishment(firstCardInfo.getId());
         amount = Integer.parseInt(sum);
-        dashboardPage = replenishmentPage.makeValidReplenishment(String.valueOf(amount), secondCardInfo);
+        if (card.equals("5559 0000 0000 0002")) {
+            replenishmentPage = dashboardPage.selectCardToReplenishment(firstCardInfo.getId());
+            dashboardPage = replenishmentPage.makeValidReplenishment(String.valueOf(amount), secondCardInfo);
+        } else {
+            replenishmentPage = dashboardPage.selectCardToReplenishment(secondCardInfo.getId());
+            dashboardPage = replenishmentPage.makeValidReplenishment(String.valueOf(amount), firstCardInfo);
+        }
     }
 
-    @Тогда("баланс его 1 карты из списка на главной странице должен стать {string} рублей")
-    public void verifyReplenishment(String total) {
-        int expectedBalanceFirstCard = Integer.parseInt(total);
-        int expectedBalanceSecondCard = secondCardBalance - amount;
+    @Тогда("баланс его пополняемой карты {string} из списка на главной странице должен стать {string} рублей")
+    public void verifyReplenishment(String card, String total) {
+        int expectedBalanceFirstCard;
+        int expectedBalanceSecondCard;
         var actualBalanceFirstCard = dashboardPage.getCardBalance(firstCardInfo.getId());
         var actualBalanceSecondCard = dashboardPage.getCardBalance(secondCardInfo.getId());
+
+        if (card.equals("5559 0000 0000 0001")) {
+            expectedBalanceFirstCard = Integer.parseInt(total);
+            expectedBalanceSecondCard = secondCardBalance - amount;
+        } else {
+            expectedBalanceFirstCard = firstCardBalance - amount;
+            expectedBalanceSecondCard = Integer.parseInt(total);
+        }
+
         assertAll(()->assertEquals(expectedBalanceFirstCard, actualBalanceFirstCard),
                 ()->assertEquals(expectedBalanceSecondCard, actualBalanceSecondCard));
     }
